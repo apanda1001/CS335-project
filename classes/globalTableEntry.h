@@ -17,4 +17,11 @@ class GlobalTableEntry {
             vector<string> c;
             calls = c;
         }
+        int getKey() {
+            int key_score = 0;
+            for(int i = 0; i < function_name.length(); i++) {
+                key_score += (function_name[i] - 'a' + 1);
+            }
+            return (31 * key_score);
+        }
 };
