@@ -3,28 +3,32 @@
 #include <vector>
 #include <map>
 #include <iterator>
+#include <stdlib.h>
 #include "localTable.h"
-
+#include "globalTable.h"
 
 
 using namespace std;
 
 int main() {
-    ID id("5", "i", "int");
-    vector<GlobalTableEntry> GlobalTable;
-    GlobalTableEntry gTE1("my_function",  "int");
-    cout << "gTE1: " << gTE1.function_name << "\t" << gTE1.return_type << "\n";
-    GlobalTable.push_back(gTE1);
+    nodeptr * n = ( nodeptr * ) malloc( sizeof( nodeptr ) );
+    ID id( "5", "i", "int" );
+    id.varPointer = n;
     cout << "pushed to global table\n";
-    LocalTable * mf = (LocalTable *)malloc(sizeof(LocalTable));
+    GlobalTable *GT = ( GlobalTable * ) malloc( sizeof( GlobalTable ) );
+    cout << "pushed to global table\n";
+    Method m1( "my_function",  "int" );
+    cout << "pushed to global table\n";
+    m1.methodPointer = n;
+    cout << "pushed to global table\n";
+    GT->methods.insert( pair<int, Method>( m1.getKey(), m1 ) );
+    cout << "pushed to global table\n";
+    LocalTable * mf = ( LocalTable * )malloc( sizeof( LocalTable ) );
     int key = id.getKey();
-    pair<int, ID> p(key, id);
-    map<int, ID> d;
-    mf->declarations = d;
-    (mf->declarations).insert(p);
+    mf->declarations.insert( pair<int, ID>( key, id ) );
     cout << "inserted id\n";
-    mf->gTE = &(gTE1);
-    cout << "This is my local table for function: " << mf->gTE->function_name << " with return type " << mf->gTE->return_type << endl;
+    mf->m = &( m1 );
+    cout << "This is my local table for function: " << mf->m->lexeme << " with return type " << mf->m->return_type << endl;
     map<int, ID>:: iterator it;
     for(it = (mf->declarations).begin(); it != (mf->declarations).end(); it++) {
         cout << it->first << "\t" << it->second.lexeme << "\n";

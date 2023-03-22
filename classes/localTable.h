@@ -1,14 +1,13 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "globalTableEntry.h"
+#include "method.h"
 
 using namespace std;
 
 class LocalTable {
     public:
-        GlobalTableEntry* gTE;
+        Method* m;
         map <int, ID> args;
-        map <int, ID> declarations; // will figure out a way to hash it
-        vector <LocalTable *> children;
+        map <int, ID> declarations; 
 };

@@ -1,11 +1,13 @@
 #include <string>
 #include <vector>
+#include "nodeptr.h"
 using namespace std;
 class ID {
 public:
+    nodeptr* varPointer;
     string value;
     string lexeme;
-    string type; // aur kuch daalu?
+    string type; 
     vector<string> appearances;
     ID(string v, string l, string t) {
         value = v;
