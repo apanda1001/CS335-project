@@ -9,13 +9,6 @@ public:
     string lexeme;
     string type; 
     vector<string> appearances;
-    ID( string v, string l, string t ) {
-        value = v;
-        lexeme  = l;
-        type  = t;
-        vector<string> a;
-        appearances = a;
-    }
     int getKey() {
         int key_score = 0;
         for( int i = 0; i < lexeme.length(); i++ ) {

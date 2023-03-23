@@ -7,5 +7,5 @@ using namespace std;
 class GlobalTable {
     public:
         map<int, ID> fields;
-        map<int, Method> methods;
+        vector< map<int, Method> > methods;
 };
