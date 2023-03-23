@@ -10,15 +10,11 @@ class Method {
         string return_type; 
         vector<string> appearances;
         map<int, ID> arguments;
-        Method(string l, string t) {
-            lexeme  = l;
-            return_type  = t;
-        }
         int getKey() {
             int key_score = 0;
-            for(int i = 0; i < lexeme.length(); i++) {
-                key_score += (lexeme[i] - 'a' + 1);
+            for ( int i = 0; i < lexeme.length(); i++ ) {
+                key_score += ( lexeme[ i ] - 'a' + 1 );
             }
-            return (31 * key_score);
+            return ( 31 * key_score );
         }
 };
