@@ -6,6 +6,7 @@
     #include <vector>
     #include <queue>
 	#include <stack>
+	#include <string>
 	#include <typeinfo>
 	#include "./classes/localTable.h" // the local table that contains other classes and their  headers
 	#include "./classes/globalTable.h"
@@ -17,6 +18,7 @@
 	fstream fout;
     nodeptr* root;
     int num = 1;
+	int scope = 1; // fields: scope 0. method vars: scope 1. inside statements: scope++;
 	nodeptr* NON_TERMINAL(string s)
 	{
     nodeptr* t = new nodeptr;
@@ -32,6 +34,7 @@
     t->Token = tok;
     t->Lexeme = l;
     t->n = num;
+	t->scope = scope;
     num++;
     return t;
 	}
@@ -106,16 +109,29 @@
 		nodeptr* temp = ( nodeptr* )malloc( sizeof( nodeptr ) ); // nodeptr: variabledeclarators
 		nodeptr* newTemp = ( nodeptr* )malloc( sizeof( nodeptr ) );
 		nodeptr* travTemp = ( nodeptr* )malloc( sizeof( nodeptr ) );
+		nodeptr* valTemp = ( nodeptr* )malloc( sizeof( nodeptr ) );
+		string v;
 		if ( temp->children.size() == 1 ) {
 			ID id;
 			temp = temp->children[ 0 ]; //curr-> vdec
 			newTemp = temp;
+			if ( temp->children.size() != 1 ) {
+				valTemp = temp->children[ 2 ]; // vdec->vinit
+				valTemp = valTemp->children[ 0 ]; // vinit->exp
+				valTemp = valTemp->children[ 0 ]; // exp->assexp
+				valTemp = valTemp->children[ 0 ]; // assexp->lit
+				if ( valTemp->name == "Literal" ) {
+					v = valTemp->children[ 0 ]->Lexeme;
+				}
+
+
+			}
 			temp = temp->children[ 0 ]; //vdec-> vdecid
 			temp = temp->children[ 0 ]; //vdecid-> id
 			temp = temp->children[ 0 ]; //id-> ID
 			id.lexeme = temp->Lexeme;
 			id.type = type;
-			id.value = ""
+			id.value = v;
 			id.varPointer = newTemp;
 			output.insert( pair<int, ID>( id.getKey(), id ) );
 		} else {
@@ -128,7 +144,7 @@
 				travTemp = travTemp->children[ 0 ]; //id-> ID
 				id.lexeme = travTemp->Lexeme;
 				id.type = type;
-				id.value = ""
+				id.value = "";
 				id.varPointer = newTemp;
 				output.insert( pair<int, ID>( id.getKey(), id ) );
 				temp = temp->children[ 0 ];
@@ -138,7 +154,8 @@
 		return;
 	}
 
-	vector< map<int, Method> > getClassMethods ( vector< vector <nodeptr*> > methods, ) {
+	vector< map<int, Method> > getClassMethods ( vector< vector <nodeptr*> > methods ) {
+		vector< map<int, Method> > classMethods;
 		for ( int i = 0; i < methods.size(); i++ ) {
 			map<int, Method> methodObjects;
 			for ( int j = 0; j < methods[ i ].size(); j++ ) {
@@ -180,8 +197,8 @@
 				methodObjects.insert( pair<int, Method>( mee.getKey(), mee ) );
 			}
 			classMethods.push_back( methodObjects);
-			
 		}
+		return classMethods;
 	}
 
 %}
@@ -1168,54 +1185,62 @@ StatementExpression: Assignment     {
 
 IfThenStatement:  IF LB Expression RB Statement  {   $$ = NON_TERMINAL("IfThenStatement"); $$->children.push_back(NODE("Keyword","if"));  
 $$->children.push_back(NODE("Separator","("));  
+scope++;
 if($3)  $$->children.push_back($3);    
 $$->children.push_back(NODE("Separator",")")); 
-if($5) $$->children.push_back($5);};
+
+if($5) $$->children.push_back($5); scope--;};
 
 IfThenElseStatement:  IF LB Expression RB StatementNoShortIf ELSE Statement  {   
 	$$ = NON_TERMINAL("IfThenStatement"); 
 	$$->children.push_back(NODE("Keyword","if"));  
 	$$->children.push_back(NODE("Separator","("));  
+	scope++;
 	if($3)  $$->children.push_back($3);    
 	$$->children.push_back(NODE("Separator",")")); 
 	if($5) $$->children.push_back($5);  
-	$$->children.push_back(NODE("Keyword","else"));    
-	if($7) $$->children.push_back($7);};
-
+	$$->children.push_back(NODE("Keyword","else"));  
+ 
+	if($7) $$->children.push_back($7);scope--;};
+	
 IfThenElseStatementNoShortIf:  IF LB Expression RB StatementNoShortIf ELSE StatementNoShortIf    {   $$ = NON_TERMINAL("IfThenStatement"); 
                           $$->children.push_back(NODE("Keyword","if"));  
 						  $$->children.push_back(NODE("Separator","("));  
+						  scope++;
 						  if($3)  $$->children.push_back($3);    
 						  $$->children.push_back(NODE("Separator",")")); 
 						  if($5) $$->children.push_back($5);  
 						  $$->children.push_back(NODE("Keyword","else"));    
-						  if($7) $$->children.push_back($7);};
+						  if($7) $$->children.push_back($7);scope--;};
 
 WhileStatement:	  WHILE LB Expression RB Statement   {   
 	$$ = NON_TERMINAL("WhileStatement");  
-	$$->children.push_back(NODE("Keyword","while"));   
+	$$->children.push_back(NODE("Keyword","while")); 
+	scope++;  
 	$$->children.push_back(NODE("Separator","("));  
 	if($3)  $$->children.push_back($3);    
 	$$->children.push_back(NODE("Separator",")")); 
-	if($5) $$->children.push_back($5);};
+	if($5) $$->children.push_back($5);scope--;};
 
 WhileStatementNoShortIf:  WHILE LB Expression RB StatementNoShortIf  {   
 	$$ = NON_TERMINAL("WhileStatement");  
-	$$->children.push_back(NODE("Keyword","while"));   
+	$$->children.push_back(NODE("Keyword","while")); 
+	scope++;  
 	$$->children.push_back(NODE("Separator","("));  
 	if($3)  $$->children.push_back($3);   
 	$$->children.push_back(NODE("Separator",")")); 
-	if($5) $$->children.push_back($5);
+	if($5) $$->children.push_back($5);scope--;
 	};
 
 DoStatement:	  DO Statement WHILE LB Expression RB SM_COLON     {   
 	$$ = NON_TERMINAL("DoStatement");  
+	scope++;
 	if($2)  $$->children.push_back($2);    
 	$$->children.push_back(NODE("Keyword","while"));   
 	$$->children.push_back(NODE("Separator","("));  
 	if($5) $$->children.push_back($5);   
 	$$->children.push_back(NODE("Separator",")"));    
-	$$->children.push_back(NODE("Separator",";")); };
+	$$->children.push_back(NODE("Separator",";")); scope--; };
 
 ForInitOpt: ForInit     {   $$ = NON_TERMINAL("ForInitOpt");  
                             if($1)  $$->children.push_back($1);}
@@ -1228,6 +1253,7 @@ ForUpdateOpt: ForUpdate     {   $$ = NON_TERMINAL("ForUpdateOpt");
     |                       {	$$ = NULL; };
 ForStatement:	  FOR LB ForInitOpt SM_COLON ExpressionOpt SM_COLON ForUpdateOpt RB Statement    {   $$ = NON_TERMINAL("ForStatement");    
                  $$->children.push_back(NODE("Keyword","for")); 
+				 scope++;
 				 $$->children.push_back(NODE("Separator","("));  
 				 if($3)  $$->children.push_back($3);    
 				 $$->children.push_back(NODE("Separator",";"));   
@@ -1235,17 +1261,18 @@ ForStatement:	  FOR LB ForInitOpt SM_COLON ExpressionOpt SM_COLON ForUpdateOpt R
 				 $$->children.push_back(NODE("Separator",";"));  
 				 if($7) $$->children.push_back($7);   
 				 $$->children.push_back(NODE("Separator",")")); 
-				 if($9) $$->children.push_back($9);};
+				 if($9) $$->children.push_back($9); scope--;};
 ForStatementNoShortIf:	  FOR LB ForInitOpt SM_COLON ExpressionOpt SM_COLON ForUpdateOpt RB StatementNoShortIf       {   $$ = NON_TERMINAL("ForStatement");    
                              $$->children.push_back(NODE("Keyword","for")); 
 							 $$->children.push_back(NODE("Separator","("));  
+							 scope++;
 							 if($3)  $$->children.push_back($3);    
 							 $$->children.push_back(NODE("Separator",";"));  
 							 if($5) $$->children.push_back($5);   
 							 $$->children.push_back(NODE("Separator",";"));  
 							 if($7) $$->children.push_back($7);   
 							 $$->children.push_back(NODE("Separator",")")); 
-							 if($9) $$->children.push_back($9);};
+							 if($9) $$->children.push_back($9); scope--;}; 
 ForInit: StatementExpressionList    {   $$ = NON_TERMINAL("ForInit");  
                                         if($1)  $$->children.push_back($1);
 									}
@@ -1809,44 +1836,13 @@ Expression:	  AssignmentExpression      {   $$ = NON_TERMINAL("Expression");
 
 %%
 
-int main(int argc, char* argv[])
+int main( int argc, char* argv[] )
 {
-	yyin = fopen(argv[1],"r");
-	fout.open("output.txt",ios::out);
-	fout << "digraph{\n";
+	yyin = fopen (argv[ 1 ],"r" );
+	fout.open( "output.txt", ios::out );
 	yyparse();
 	fclose(yyin);
-	/*
-    queue<nodeptr*>q;
-    q.push(root);
-    nodeptr*t;
-    while(!q.empty())
-    {
-        t = q.front();
-        for(auto i:t->children)
-        {
-            fout << "node"<<t->n<<" -> "<<"node"<<i->n<<"\n";
-            q.push(i);
-        }
-        if(t->name!="")
-        {
-            fout << "node" << t->n << " [ label=\"" << t->name << "\" ]\n";
-        }
-        else
-        {
-            if(t->Lexeme[0]=='\"')
-            {
-                t->Lexeme = "\\" + t->Lexeme;
-                t->Lexeme.pop_back();
-                /* t->Lexeme += "\""; 
-            }
-            fout << "node" << t->n << " [ label= \"" << t->Lexeme << "\tToken: " << "(" << t->Token << ")" << " \" ]\n";
-        }
-        q.pop();
-    }
-	fout << "\n}";
-	*/
-// NOTE: since the graph is DAG, during DFS each vertex will be visited only once, so we need not maintain a separate "visited" array and waste space
+
 	stack<nodeptr *> s;
 	s.push(root);
     nodeptr*t;
@@ -1897,9 +1893,9 @@ int main(int argc, char* argv[])
             s.push(i);
         }
 	}
-
-	// storing the methods and fields for each class (class members)
+	vector<string> names;
 	for ( auto it: classes ) {
+		names.push_back( it->children[ 2 ]->children[ 0 ]->Lexeme );
 		nodeptr* curr = it->children[ it->children.size() - 1 ];
 		vector<nodeptr *> v;
 		if ( curr->children[ 1 ] != NULL ) {
@@ -1947,7 +1943,7 @@ int main(int argc, char* argv[])
 					string type = findType( curr->children[ 0 ] );
 					getDeclarators( type, curr->children[ 1 ], variables);
 				}
-				// variables.push_back( curr->children[ 0 ] );
+
 			} else {
 				nodeptr* tempCurr = ( nodeptr* ) malloc( sizeof( nodeptr ) );
 				while ( curr->children.size() > 1 ) {
@@ -1958,13 +1954,11 @@ int main(int argc, char* argv[])
 					}
 					curr = curr->children[ 0 ];
 				}
-				// variables.insert( ( curr->children[ 0 ] ) );
 			}
 			forAClass.push_back( variables );
 		}
 		theGiantVariableTable.push_back( forAClass );
 	}
-
 
 	vector< map<int, Method> > classMethods = getClassMethods( methods );
 	vector< map<int, ID> > classFields;
@@ -1976,8 +1970,79 @@ int main(int argc, char* argv[])
 		}
 		classFields.push_back( fieldObjects );
 	} 
+	vector< vector<LocalTable*> > classLocalTables;
 	
+	for ( auto methods: classMethods ) {
+		int i = 0;
+		vector< LocalTable *> LocalTables;
+		int j = 0;
+		for ( auto method: methods ){
+			LocalTable* lt = ( LocalTable* )malloc( sizeof( LocalTable ) );
+			lt->m = &( method.second );
+			lt->args = ( method.second ).arguments;
+			lt->declarations = theGiantVariableTable[ i ][ j ];
+			LocalTables.push_back( lt );
+			j++;
+		}
+		classLocalTables.push_back( LocalTables );
+		i++;
+		
+	}
+	vector< GlobalTable* > GlobalTables;
+	for ( auto field: classFields ) {
+		GlobalTable * gt = ( GlobalTable * ) malloc( sizeof( GlobalTable ) );
+		gt->fields = field;
+		GlobalTables.push_back( gt );
+	} 
+	int i = 0;
 	
+	for ( auto method: classMethods ) {
+		
+		( GlobalTables[ i ] )->methods = method;
+		i++;
+	}
+	i = 0;
+	for ( auto GT1: GlobalTables ) {
+		fstream fgt;
+		string x = names[ i ] + ".csv";
+		fgt.open( x, ios::out );
+		fgt << "fields,\n";
+		fgt << "name," << "type\n";
+		for ( auto f: GT1->fields ) {
+			fgt << f.second.lexeme << "," << f.second.type << endl;
+		}
+		fgt << "methods,\n";
+		fgt << "name," << "return_type\n";
+		for ( auto m: GT1->methods ) {
+
+			fgt << m.second.lexeme << "," << m.second.return_type << endl;
+
+			
+		}
+		fgt.close();
+		i++;
+	}
+	i = 0;
+	for ( auto clt: classLocalTables ) {
+		for ( auto lt: clt ) {
+			fstream fgt;
+			string x = "meth" + names[ i ] + "_" + to_string( i ) + ".csv";
+			fgt.open( x, ios::out );
+			fgt << "arguments,\n";
+			fgt << "name," << "type\n";
+			for ( auto f: lt->args ) {
+				fgt << f.second.lexeme << "," << f.second.type << endl;
+			}
+			fgt << "declarations,\n";
+			fgt << "name," << "type\n";
+			for ( auto f: lt->declarations ) {
+				fgt << f.second.lexeme << "," << f.second.type << endl;
+			}
+			fgt.close();
+		}
+		i++;
+	}
+
 	fout.close();
 	return 0;
 }

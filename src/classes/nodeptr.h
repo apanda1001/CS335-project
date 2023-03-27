@@ -1,5 +1,3 @@
-
-#include <string>
 #include <vector>
 
 using namespace std;
@@ -10,5 +8,6 @@ struct nodeptr{
     string name;
 	int lineNumber;
     int n;
+    int scope;
     vector<nodeptr*> children;
 };
