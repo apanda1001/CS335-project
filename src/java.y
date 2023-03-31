@@ -15,7 +15,6 @@
 	extern char* yytext;
 	extern int yylineno;
 	extern FILE* yyin;
-	fstream fout;
     nodeptr* root;
     int num = 1;
 	int scope = 1; // fields: scope 0. method vars: scope 1. inside statements: scope++;
@@ -1839,60 +1838,12 @@ Expression:	  AssignmentExpression      {   $$ = NON_TERMINAL("Expression");
 int main( int argc, char* argv[] )
 {
 	yyin = fopen (argv[ 1 ],"r" );
-	fout.open( "output.txt", ios::out );
 	yyparse();
 	fclose(yyin);
 
-	stack<nodeptr *> s;
-	s.push(root);
-    nodeptr*t;
-	while(!s.empty()) 
-	{
-		t = s.top();
-		s.pop();
-		if(t->name!="")
-        {
-            fout << "node" << t->n << "(" << t->name << ")\n";
-			if(t->name == "ClassDeclaration") classes.push_back(t);
 
-        }
-        else
-        {
-            if(t->Lexeme[0]=='\"')
-            {
-                t->Lexeme = "\\" + t->Lexeme;
-                t->Lexeme.pop_back();
-            }
-            fout << "node" << t->n << "(" << t->Lexeme << ")\tToken: " << "(" << t->Token << ")\n";
-        }
-		for ( auto i: t->children )
-        {
-			if( t->name != "" ) 
-			{
-				if( i->name != "" ) 
-				{
-					fout << "node" << t->n << "(" << t->name << ") -> "<<"node" << i->n << "(" << i->name << ")\n";
-				} 
-				else 
-				{
-					fout << "node" << t->n << "(" << t->name << ") -> "<<"node" << i->n << "(" << i->Lexeme << ")\n";
-				}
-				
-			}
-			else 
-			{
-				if( i->name != "" ) 
-				{
-					fout << "node" << t->n << "(" << t->Lexeme << ") -> "<<"node" << i->n << "(" << i->name << ")\n";
-				} 
-				else 
-				{
-					fout << "node" << t->n << "(" << t->Lexeme << ") -> "<<"node" << i->n << "(" << i->Lexeme << ")\n";
-				}
-			}
-            s.push(i);
-        }
-	}
+    nodeptr*t;
+
 	vector<string> names;
 	for ( auto it: classes ) {
 		names.push_back( it->children[ 2 ]->children[ 0 ]->Lexeme );
@@ -2043,7 +1994,7 @@ int main( int argc, char* argv[] )
 		i++;
 	}
 
-	fout.close();
+
 	return 0;
 }
 
