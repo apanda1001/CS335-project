@@ -23,7 +23,7 @@ Uploaded to Canvas
 
 ## How to run?
 The code must be run in the ```src``` folder. \
-Once the Makefile is run (please refer steps 1-4 from ```Instructions Milestone 2.pdf```), all one needs to do is put the following command. 
+Once the Makefile is run (please refer steps 1-4 from ```Instructions Milestone 2.pdf```. Only the name of the output executable is changed to ```java_symbol_table``` in the Makefile), all one needs to do is put the following command. 
 ```
 java_symbol_table "/path/to/testcase.java"
 ```
