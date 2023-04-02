@@ -15,6 +15,8 @@
 	extern char* yytext;
 	extern int yylineno;
 	extern FILE* yyin;
+	fstream fout;
+	fstream fout1;
     nodeptr* root;
     int num = 1;
 	int scope = 1; // fields: scope 0. method vars: scope 1. inside statements: scope++;
@@ -1838,12 +1840,90 @@ Expression:	  AssignmentExpression      {   $$ = NON_TERMINAL("Expression");
 int main( int argc, char* argv[] )
 {
 	yyin = fopen (argv[ 1 ],"r" );
+	fout1.open( "output.txt", ios::out );
 	yyparse();
 	fclose(yyin);
-
-
+	fout.open( "output.dot", ios::out );
+	fout << "digraph{\n";
+	queue<nodeptr*>q;
+    q.push(root);
     nodeptr*t;
+    while(!q.empty())
+    {
+        t = q.front();
+        for(auto i:t->children)
+        {
+            fout << "node"<<t->n<<" -> "<<"node"<<i->n<<"\n";
+            q.push(i);
+        }
+        if(t->name!="")
+        {
+            fout << "node" << t->n << " [ label=\"" << t->name << "\" ]\n";
+        }
+        else
+        {
+            if(t->Lexeme[0]=='\"')
+            {
+                t->Lexeme = "\\" + t->Lexeme;
+                t->Lexeme.pop_back();
+                /* t->Lexeme += "\""; */
+            }
+            fout << "node" << t->n << " [ label= \"" << t->Lexeme << "(" << t->Token << ")" << " \" ]\n";
+        }
+        q.pop();
+    }
+	fout << "\n}";
+	fout.close();
+	stack<nodeptr *> s;
+	s.push(root);
+    nodeptr*t1;
+	while(!s.empty()) 
+	{
+		t1 = s.top();
+		s.pop();
+		if(t1->name!="")
+        {
+            fout1 << "node" << t1->n << "(" << t1->name << ")\n";
+			if(t1->name == "ClassDeclaration") classes.push_back(t1);
 
+        }
+        else
+        {
+            if(t1->Lexeme[0]=='\"')
+            {
+                t1->Lexeme = "\\" + t1->Lexeme;
+                t1->Lexeme.pop_back();
+            }
+            fout1 << "node" << t1->n << "(" << t1->Lexeme << ")\tToken: " << "(" << t1->Token << ")\n";
+        }
+		for ( auto i: t1->children )
+        {
+			if( t1->name != "" ) 
+			{
+				if( i->name != "" ) 
+				{
+					fout1 << "node" << t1->n << "(" << t1->name << ") -> "<<"node" << i->n << "(" << i->name << ")\n";
+				} 
+				else 
+				{
+					fout1 << "node" << t1->n << "(" << t1->name << ") -> "<<"node" << i->n << "(" << i->Lexeme << ")\n";
+				}
+				
+			}
+			else 
+			{
+				if( i->name != "" ) 
+				{
+					fout1 << "node" << t1->n << "(" << t1->Lexeme << ") -> "<<"node" << i->n << "(" << i->name << ")\n";
+				} 
+				else 
+				{
+					fout1 << "node" << t1->n << "(" << t1->Lexeme << ") -> "<<"node" << i->n << "(" << i->Lexeme << ")\n";
+				}
+			}
+            s.push(i);
+        }
+	}
 	vector<string> names;
 	for ( auto it: classes ) {
 		names.push_back( it->children[ 2 ]->children[ 0 ]->Lexeme );
@@ -1946,10 +2026,8 @@ int main( int argc, char* argv[] )
 		GlobalTables.push_back( gt );
 	} 
 	int i = 0;
-	
 	for ( auto method: classMethods ) {
-		
-		( GlobalTables[ i ] )->methods = method;
+		GlobalTables[ i ]->methods = method;
 		i++;
 	}
 	i = 0;
@@ -1965,9 +2043,7 @@ int main( int argc, char* argv[] )
 		fgt << "methods,\n";
 		fgt << "name," << "return_type\n";
 		for ( auto m: GT1->methods ) {
-
 			fgt << m.second.lexeme << "," << m.second.return_type << endl;
-
 			
 		}
 		fgt.close();
@@ -1994,7 +2070,7 @@ int main( int argc, char* argv[] )
 		i++;
 	}
 
-
+	fout1.close();
 	return 0;
 }
 
